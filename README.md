@@ -7,3 +7,27 @@ You should mount the files to local directory so server does not need to update 
 ## Features
 - **Automated Startup and Updates:** The container uses `start-server.sh` as the entrypoint, which always starts the server via command-line (CMD) and attempts to update the server files if possible.
 - **Volume Mounting:** Mount your local directory that should contain the Ace Squared game files to `/opt/server/acesquared` inside the container.
+
+<br>
+<br>
+
+Example cmd to start the server:
+```bash
+sudo docker run -v "$PWD/eu-official-1:/opt/server/acesquared" \
+--user $(id -u):$(id -g) \
+-e HOME=/home/steam \
+--name=eu-official-1 \
+--restart unless-stopped \
+--memory=4g \
+-d \
+-p 60010-60012:60010-60012/udp \
+acesquaredserver
+```
+
+Please note that you MUST forward the UDP ports used using the ```-p``` argument!<br>
+These ports MUST be equal to the ports specified in the server config (config.toml)!
+
+
+## Notes
+- If you get weird error like "/usr/local/bin/start-server.sh: no such file or directory",
+make sure to convert the script to have unix line endings.
