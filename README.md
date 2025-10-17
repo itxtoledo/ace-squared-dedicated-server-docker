@@ -50,6 +50,53 @@ acesquaredserver
 - `-p 60010-60012:60010-60012/udp`: Maps UDP ports 60010-60012 from the host to the container - these are the game server ports
 - `acesquaredserver`: The name of the Docker image to use
 
+## Container Management Commands
+
+### Stop the server
+```bash
+docker stop br-obex-1
+```
+
+### Start the server (after stopping)
+```bash
+docker start br-obex-1
+```
+
+### View server logs
+```bash
+docker logs br-obex-1
+```
+
+### View real-time logs (follow logs)
+```bash
+docker logs -f br-obex-1
+```
+
+### Remove the container (after stopping)
+```bash
+docker rm br-obex-1
+```
+
+### Remove the container forcefully (stop and remove)
+```bash
+docker rm -f br-obex-1
+```
+
+### Execute commands inside the running container
+```bash
+docker exec -it br-obex-1 /bin/bash
+```
+
+### List all running containers
+```bash
+docker ps
+```
+
+### List all containers (including stopped ones)
+```bash
+docker ps -a
+```
+
 Please note that you MUST forward the UDP ports used using the ```-p``` argument!<br>
 These ports MUST be equal to the ports specified in the server config (config.toml)!
 
