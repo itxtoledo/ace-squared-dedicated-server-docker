@@ -84,37 +84,27 @@ fi
 
 # Copy steamclient.so for Unity to find via the Steam SDK path
 STEAM_SDK_DIR="$HOME/.steam/sdk64"
-PLUGIN_SRC="/opt/server/acesquared/AceSquaredDedicated.x86_64_Data/Plugins/steamclient.so"
 PLUGIN_DST="$STEAM_SDK_DIR/steamclient.so"
 
-echo ">>> Debugging steamclient.so copy:"
-echo "PLUGIN_SRC: $PLUGIN_SRC"
+echo ">>> Debugging steamclient.so copy (using find):"
 echo "STEAM_SDK_DIR: $STEAM_SDK_DIR"
-if [ -f "$PLUGIN_SRC" ]; then
-    echo "PLUGIN_SRC exists."
-else
-    echo "PLUGIN_SRC does NOT exist."
-fi
-if [ -d "$STEAM_SDK_DIR" ]; then
-    echo "STEAM_SDK_DIR exists."
-else
-    echo "STEAM_SDK_DIR does NOT exist."
-fi
 
-# Only copy if both source and destination directories exist
-if [ -f "$PLUGIN_SRC" ] && [ -d "$STEAM_SDK_DIR" ]; then
-    echo ">>> Copying plugin from $PLUGIN_SRC to $PLUGIN_DST"
-    cp -f "$PLUGIN_SRC" "$PLUGIN_DST"
-    echo ">>> Listing contents of $STEAM_SDK_DIR after copying steamclient.so:"
-    ls -laR "$STEAM_SDK_DIR"
+# Find the actual steamclient.so file
+FOUND_PLUGIN_SRC=$(find /opt/server/acesquared -name "steamclient.so" -type f -print -quit)
+
+if [ -n "$FOUND_PLUGIN_SRC" ]; then # Check if FOUND_PLUGIN_SRC is not empty
+    echo "Found steamclient.so at: $FOUND_PLUGIN_SRC"
+    if [ -d "$STEAM_SDK_DIR" ]; then
+        echo "STEAM_SDK_DIR exists."
+        echo ">>> Copying plugin from $FOUND_PLUGIN_SRC to $PLUGIN_DST"
+        cp -f "$FOUND_PLUGIN_SRC" "$PLUGIN_DST"
+        echo ">>> Listing contents of $STEAM_SDK_DIR after copying steamclient.so:"
+        ls -laR "$STEAM_SDK_DIR"
+    else
+        echo "STEAM_SDK_DIR does NOT exist. This should not happen as it's created earlier."
+    fi
 else
-    echo ">>> Warning: Could not copy steamclient.so. Source: $PLUGIN_SRC, Destination dir: $STEAM_SDK_DIR"
-    if [ ! -f "$PLUGIN_SRC" ]; then
-        echo ">>> Source file does not exist"
-    fi
-    if [ ! -d "$STEAM_SDK_DIR" ]; then
-        echo ">>> Destination directory does not exist"
-    fi
+    echo ">>> Warning: Could not find steamclient.so within /opt/server/acesquared. Copy operation skipped."
 fi
 
 echo ">>> Starting server as uid $(id -u) gid $(id -g) HOME=$HOME"
