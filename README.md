@@ -11,14 +11,22 @@ You should mount the files to local directory so server does not need to update 
 <br>
 <br>
 
+
+Build
+```bash
+sudo docker build -t acesquaredserver .
+```
+
+
 Example cmd to start the server:
 ```bash
-sudo docker run -v "$PWD/eu-official-1:/opt/server/acesquared" \
+sudo docker run -v "$PWD/br-obex-1:/opt/server/acesquared" \
+-v "$PWD/files:/opt/steamcmd" \
 --user $(id -u):$(id -g) \
 -e HOME=/home/steam \
---name=eu-official-1 \
+--name=br-obex-1 \
 --restart unless-stopped \
---memory=4g \
+--memory=2.5g \
 -d \
 -p 60010-60012:60010-60012/udp \
 acesquaredserver

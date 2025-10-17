@@ -1,5 +1,4 @@
 FROM debian:bookworm-slim
-
 LABEL maintainer="Akseli Vanhamaa"
 
 RUN apt-get update && apt-get install -y \
@@ -13,18 +12,13 @@ RUN apt-get update && apt-get install -y \
 
 # Writable HOME and server dir for arbitrary UIDs
 ENV HOME=/home/steam
-RUN mkdir -p "$HOME" /opt/server \
- && chmod 0777 "$HOME" /opt/server
+RUN mkdir -p "$HOME" /opt/steamcmd \
+ && chmod 0777 "$HOME" /opt/steamcmd
 
-WORKDIR /opt/server
+# Diretório de trabalho
+WORKDIR /opt/steamcmd
 
-RUN wget -q https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz \
- && tar -xzf steamcmd_linux.tar.gz \
- && rm steamcmd_linux.tar.gz \
- # Important: keep write perms so steamcmd can self-update
- && chmod -R a+rwX /opt/server \
- && chmod a+rx /opt/server/steamcmd.sh
-
+# Script de inicialização que instala steamcmd no primeiro uso
 COPY --chmod=0755 ./start-server.sh /usr/local/bin/start-server.sh
 
 CMD ["start-server.sh"]
