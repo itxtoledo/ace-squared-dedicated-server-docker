@@ -23,16 +23,19 @@ else
         echo ">>> SteamCMD not found in mounted volume, using built-in version from image"
         # Use the built-in SteamCMD for this run
         STEAMCMD_EXECUTABLE="$STEAMCMD_BUILT_IN/steamcmd.sh"
+        
         # Try to copy the built-in SteamCMD to the mounted volume for persistence
-        # First try the direct files
-        cp $STEAMCMD_BUILT_IN/steamcmd.sh $STEAMCMD_MOUNTED/ 2>/dev/null || true
-        # Create linux32 directory in mounted volume if it doesn't exist
-        mkdir -p $STEAMCMD_MOUNTED/linux32 2>/dev/null || true
-        # Copy linux32 files
-        cp -r $STEAMCMD_BUILT_IN/linux32/* $STEAMCMD_MOUNTED/linux32/ 2>/dev/null || true
-        # Set permissions on copied files
-        chmod +x $STEAMCMD_MOUNTED/steamcmd.sh 2>/dev/null || true
-        chmod +x $STEAMCMD_MOUNTED/linux32/steamcmd 2>/dev/null || true
+        # Check if destination directory is empty
+        if [ -z "$(ls -A $STEAMCMD_MOUNTED)" ]; then
+            echo ">>> Mounted volume is empty, copying SteamCMD files for persistence"
+            # Copy all files from built-in location to mounted location
+            cp -r $STEAMCMD_BUILT_IN/* $STEAMCMD_MOUNTED/ 2>/dev/null || true
+            # Set permissions on copied files
+            chmod +x $STEAMCMD_MOUNTED/steamcmd.sh 2>/dev/null || true
+            chmod +x $STEAMCMD_MOUNTED/linux32/steamcmd 2>/dev/null || true
+        else
+            echo ">>> Mounted volume has content but no SteamCMD, using built-in version"
+        fi
     else
         echo ">>> No SteamCMD found in built-in location. This should not happen. Exiting..."
         exit 1
