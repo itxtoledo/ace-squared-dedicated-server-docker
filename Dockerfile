@@ -20,7 +20,8 @@ WORKDIR /opt/steamcmd-installed
 RUN wget -q https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz \
  && tar -xzf steamcmd_linux.tar.gz \
  && rm steamcmd_linux.tar.gz \
- && chmod +x steamcmd.sh
+ && chmod +x steamcmd.sh \
+ && chmod +x linux32/steamcmd
 
 # Initialization script
 COPY --chmod=0755 ./start-server.sh /usr/local/bin/start-server.sh

@@ -30,6 +30,9 @@ else
         mkdir -p $STEAMCMD_MOUNTED/linux32 2>/dev/null || true
         # Copy linux32 files
         cp -r $STEAMCMD_BUILT_IN/linux32/* $STEAMCMD_MOUNTED/linux32/ 2>/dev/null || true
+        # Set permissions on copied files
+        chmod +x $STEAMCMD_MOUNTED/steamcmd.sh 2>/dev/null || true
+        chmod +x $STEAMCMD_MOUNTED/linux32/steamcmd 2>/dev/null || true
     else
         echo ">>> No SteamCMD found in built-in location. This should not happen. Exiting..."
         exit 1
