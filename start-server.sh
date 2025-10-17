@@ -87,6 +87,20 @@ STEAM_SDK_DIR="$HOME/.steam/sdk64"
 PLUGIN_SRC="/opt/server/acesquared/AceSquaredDedicated.x86_64_Data/Plugins/steamclient.so"
 PLUGIN_DST="$STEAM_SDK_DIR/steamclient.so"
 
+echo ">>> Debugging steamclient.so copy:"
+echo "PLUGIN_SRC: $PLUGIN_SRC"
+echo "STEAM_SDK_DIR: $STEAM_SDK_DIR"
+if [ -f "$PLUGIN_SRC" ]; then
+    echo "PLUGIN_SRC exists."
+else
+    echo "PLUGIN_SRC does NOT exist."
+fi
+if [ -d "$STEAM_SDK_DIR" ]; then
+    echo "STEAM_SDK_DIR exists."
+else
+    echo "STEAM_SDK_DIR does NOT exist."
+fi
+
 # Only copy if both source and destination directories exist
 if [ -f "$PLUGIN_SRC" ] && [ -d "$STEAM_SDK_DIR" ]; then
     echo ">>> Copying plugin from $PLUGIN_SRC to $PLUGIN_DST"
