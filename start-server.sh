@@ -6,29 +6,44 @@ echo "Running with UID: $(id -u), GID: $(id -g)"
 export HOME="${HOME:-/home/steam}"
 mkdir -p "$HOME/.steam/sdk64"
 
-# Check if steamcmd is already installed in the mounted directory
-if [ ! -f "/opt/steamcmd/steamcmd.sh" ]; then
-    echo ">>> SteamCMD not found in /opt/steamcmd. Installing to /opt/steamcmd..."
-    cd /opt/steamcmd
-    wget -q https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz
-    tar -xzf steamcmd_linux.tar.gz
-    rm steamcmd_linux.tar.gz
-    # Only attempt to change permissions if files exist
-    if [ -d "linux32" ]; then
-        chmod -R a+rwX linux32/ 2>/dev/null || true
-    fi
-    if [ -d "linux64" ]; then
-        chmod -R a+rwX linux64/ 2>/dev/null || true
-    fi
-    chmod a+rx ./steamcmd.sh 2>/dev/null || true
-    echo ">>> SteamCMD installed successfully!"
+# STEAMCMD_BASE is the internal location of SteamCMD in the Docker image
+STEAMCMD_BASE="/opt/steamcmd"
+
+# When the volume is mounted, it may override the built-in SteamCMD
+# So we check for a backup method first
+STEAMCMD_EXECUTABLE=""
+
+# Check if steamcmd exists in the mounted volume
+if [ -f "/opt/steamcmd/steamcmd.sh" ]; then
+    # If volume is mounted with existing SteamCMD files, use those
+    echo ">>> SteamCMD found in mounted volume, using that version"
+    STEAMCMD_EXECUTABLE="/opt/steamcmd/steamcmd.sh"
 else
-    echo ">>> SteamCMD already installed in /opt/steamcmd, skipping installation"
+    # If volume is empty (no SteamCMD files), try to find the built-in one in the image
+    # Since the volume mount overrides the image contents, we need to ensure SteamCMD exists
+    # If it doesn't exist in the mounted volume, we need to copy it from a backup location
+    # The Dockerfile should have installed SteamCMD at /opt/steamcmd during build
+    # But if the volume is mounted empty, we have to make sure it exists
+    if [ -f "$STEAMCMD_BASE/steamcmd.sh" ]; then
+        echo ">>> SteamCMD not found in mounted volume, but found in internal location"
+        # Copy to mounted volume to ensure persistence
+        cp -f $STEAMCMD_BASE/steamcmd.sh /opt/steamcmd/ 2>/dev/null || true
+        cp -f $STEAMCMD_BASE/linux32/* /opt/steamcmd/linux32/ 2>/dev/null || true
+        STEAMCMD_EXECUTABLE="/opt/steamcmd/steamcmd.sh"
+    else
+        echo ">>> No SteamCMD found in image or mounted volume. Attempting to download..."
+        cd /opt/steamcmd
+        wget -q https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz
+        tar -xzf steamcmd_linux.tar.gz
+        rm steamcmd_linux.tar.gz
+        chmod +x steamcmd.sh
+        STEAMCMD_EXECUTABLE="/opt/steamcmd/steamcmd.sh"
+    fi
 fi
 
 echo ">>> Executing steamcmd commands"
-echo ">>> SteamCMD command: bash /opt/steamcmd/steamcmd.sh +force_install_dir /opt/server/acesquared +login anonymous +app_update 3252540 validate +quit"
-if timeout 300 bash /opt/steamcmd/steamcmd.sh +force_install_dir /opt/server/acesquared +login anonymous +app_update 3252540 validate +quit; then
+echo ">>> SteamCMD command: bash $STEAMCMD_EXECUTABLE +force_install_dir /opt/server/acesquared +login anonymous +app_update 3252540 validate +quit"
+if timeout 300 bash $STEAMCMD_EXECUTABLE +force_install_dir /opt/server/acesquared +login anonymous +app_update 3252540 validate +quit; then
     echo ">>> SteamCMD update completed successfully"
 else
     echo ">>> SteamCMD execution failed or timed out. This is common on ARM64 systems due to emulation."
@@ -57,7 +72,7 @@ fi
 
 # Copy steamclient.so for Unity to find via the Steam SDK path
 STEAM_SDK_DIR="$HOME/.steam/sdk64"
-PLUGIN_SRC="/opt/server/acesquared/AceSquaredDedicated_Data/Plugins/steamclient.so"
+PLUGIN_SRC="/opt/server/acesquared/AceSquaredDedicated.x86_64_Data/Plugins/steamclient.so"
 PLUGIN_DST="$STEAM_SDK_DIR/steamclient.so"
 
 # Only copy if both source and destination directories exist
