@@ -28,11 +28,10 @@ else
         # Check if destination directory is empty
         if [ -z "$(ls -A $STEAMCMD_MOUNTED)" ]; then
             echo ">>> Mounted volume is empty, copying SteamCMD files for persistence"
-            # Copy all files from built-in location to mounted location
+            # Copy all files from built-in location to mounted location with proper permissions
             cp -r $STEAMCMD_BUILT_IN/* $STEAMCMD_MOUNTED/ 2>/dev/null || true
-            # Set permissions on copied files
-            chmod +x $STEAMCMD_MOUNTED/steamcmd.sh 2>/dev/null || true
-            chmod +x $STEAMCMD_MOUNTED/linux32/steamcmd 2>/dev/null || true
+            # Set permissions on copied files - make sure to set permissions properly
+            find $STEAMCMD_MOUNTED -type f -name "steamcmd*" -exec chmod +x {} \; 2>/dev/null || true
         else
             echo ">>> Mounted volume has content but no SteamCMD, using built-in version"
         fi
@@ -43,12 +42,11 @@ else
 fi
 
 echo ">>> Executing steamcmd commands"
-echo ">>> SteamCMD command: $STEAMCMD_EXECUTABLE +force_install_dir /opt/server/acesquared +login anonymous +app_update 3252540 validate +quit"
+echo ">>> SteamCMD command: bash $STEAMCMD_EXECUTABLE +force_install_dir /opt/server/acesquared +login anonymous +app_update 3252540 validate +quit"
 if timeout 300 bash $STEAMCMD_EXECUTABLE +force_install_dir /opt/server/acesquared +login anonymous +app_update 3252540 validate +quit; then
     echo ">>> SteamCMD update completed successfully"
 else
-    echo ">>> SteamCMD execution failed or timed out. This is common on ARM64 systems due to emulation."
-    echo ">>> The game server files may need to be pre-downloaded on an x86_64 system or ensure Docker QEMU is properly configured."
+    echo ">>> SteamCMD execution failed or timed out. This could be due to network issues or other problems."
     echo ">>> Skipping SteamCMD update and attempting to start server directly if files already exist..."
     if [ -f "/opt/server/acesquared/AceSquaredDedicated.x86_64" ]; then
         echo ">>> Game server files detected, proceeding to start server..."
