@@ -21,8 +21,6 @@ echo "Running with UID: $(id -u), GID: $(id -g)"
 
 export HOME="${HOME:-/home/steam}"
 mkdir -p "$HOME/.steam/sdk64"
-echo ">>> Listing contents of $HOME/.steam after mkdir:"
-ls -laR "$HOME/.steam"
 
 STEAMCMD_MOUNTED="/opt/steamcmd"
 STEAMCMD_EXECUTABLE="$STEAMCMD_MOUNTED/steamcmd.sh"
@@ -56,8 +54,6 @@ echo ">>> Executing steamcmd commands"
 echo ">>> SteamCMD command: bash $STEAMCMD_EXECUTABLE +force_install_dir /opt/server/acesquared +login anonymous +app_update 3252540 validate +quit"
 if timeout 300 bash $STEAMCMD_EXECUTABLE +force_install_dir /opt/server/acesquared +login anonymous +app_update 3252540 validate +quit; then
     echo ">>> SteamCMD update completed successfully"
-    echo ">>> Listing contents of /opt/server/acesquared after SteamCMD update:"
-    ls -laR /opt/server/acesquared
 else
     echo ">>> SteamCMD execution failed or timed out. This could be due to network issues or other problems."
     echo ">>> Skipping SteamCMD update and attempting to start server directly if files already exist..."
@@ -86,26 +82,18 @@ fi
 STEAM_SDK_DIR="$HOME/.steam/sdk64"
 PLUGIN_DST="$STEAM_SDK_DIR/steamclient.so"
 
-echo ">>> Debugging steamclient.so copy (using find):"
-echo "STEAM_SDK_DIR: $STEAM_SDK_DIR"
-
 # Find the actual steamclient.so file
 FOUND_PLUGIN_SRC=$(find /opt/server/acesquared -name "steamclient.so" -type f -print -quit)
 
 if [ -n "$FOUND_PLUGIN_SRC" ]; then # Check if FOUND_PLUGIN_SRC is not empty
     echo "Found steamclient.so at: $FOUND_PLUGIN_SRC"
     if [ -d "$STEAM_SDK_DIR" ]; then
-        echo "STEAM_SDK_DIR exists."
-        echo ">>> Copying plugin from $FOUND_PLUGIN_SRC to $PLUGIN_DST"
         cp -f "$FOUND_PLUGIN_SRC" "$PLUGIN_DST"
-        echo ">>> Listing contents of $STEAM_SDK_DIR after copying steamclient.so:"
-        ls -laR "$STEAM_SDK_DIR"
     else
-        echo "STEAM_SDK_DIR does NOT exist. This should not happen as it's created earlier."
+        # STEAM_SDK_DIR should always exist here as it's created earlier.
     fi
 else
     echo ">>> Warning: Could not find steamclient.so within /opt/server/acesquared. Copy operation skipped."
 fi
 
-echo ">>> Starting server as uid $(id -u) gid $(id -g) HOME=$HOME"
 exec "/opt/server/acesquared/AceSquaredDedicated.x86_64"

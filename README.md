@@ -61,6 +61,7 @@ docker stop br-obex-1
 ```bash
 docker start br-obex-1
 ```
+To apply new configurations (e.g., after editing `config.toml`), you should stop and then start the container.
 
 ### View server logs
 ```bash
@@ -98,7 +99,7 @@ docker ps -a
 ```
 
 Please note that you MUST forward the UDP ports used using the ```-p``` argument!<br>
-These ports MUST be equal to the ports specified in the server config (config.toml)!
+These ports MUST be equal to the `port`, `query_port`, and `heartbeat_port` values specified in the server config (config.toml)! For example, if your `docker run` command maps `60010-60012`, then your `config.toml` should have `port = 60010`, `query_port = 60011`, and `heartbeat_port = 60012`.
 
 ## Notes
 - The Ace Squared server is a Unity x86_64 application, so it runs in an emulated x86_64 environment inside the container using Docker's QEMU emulation on ARM64 systems.
