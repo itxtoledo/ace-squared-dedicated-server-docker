@@ -1,4 +1,4 @@
-FROM debian:bookworm-slim
+FROM --platform=linux/amd64 debian:bookworm-slim
 LABEL maintainer="Akseli Vanhamaa"
 
 RUN apt-get update && apt-get install -y \
@@ -15,10 +15,10 @@ ENV HOME=/home/steam
 RUN mkdir -p "$HOME" /opt/steamcmd \
  && chmod 0777 "$HOME" /opt/steamcmd
 
-# Diretório de trabalho
+# Working directory
 WORKDIR /opt/steamcmd
 
-# Script de inicialização que instala steamcmd no primeiro uso
+# Initialization script that installs steamcmd on first use
 COPY --chmod=0755 ./start-server.sh /usr/local/bin/start-server.sh
 
 CMD ["start-server.sh"]

@@ -1,26 +1,16 @@
 # Ace Squared Dedicated Server Docker Setup
 
-This repository provides a Docker setup for running the Ace Squared Dedicated Server. It includes a `Dockerfile` to build a containerized environment and a `start-server.sh` script that handles server startup and updates.
+## Build
 
-You should mount the files to local directory so server does not need to update unnecessarily, this way you may also e.g. inspect logs later or tweak configs. The server generates a default config file on first run, including default port numbers and other settings. Check the documentation website for more details.
-
-## Features
-- **Automated Startup and Updates:** The container uses `start-server.sh` as the entrypoint, which always starts the server via command-line (CMD) and attempts to update the server files if possible.
-- **Volume Mounting:** Mount your local directory that should contain the Ace Squared game files to `/opt/server/acesquared` inside the container.
-
-<br>
-<br>
-
-
-Build
 ```bash
-sudo docker build -t acesquaredserver .
+docker build -t acesquaredserver .
 ```
 
+## Run
 
-Example cmd to start the server:
+### On Linux x86_64 or Apple Silicon (M1/M2)
 ```bash
-sudo docker run -v "$PWD/br-obex-1:/opt/server/acesquared" \
+docker run -v "$PWD/br-obex-1:/opt/server/acesquared" \
 -v "$PWD/files:/opt/steamcmd" \
 --user $(id -u):$(id -g) \
 -e HOME=/home/steam \
@@ -32,10 +22,38 @@ sudo docker run -v "$PWD/br-obex-1:/opt/server/acesquared" \
 acesquaredserver
 ```
 
+### On Apple Silicon with explicit platform (recommended for better performance)
+```bash
+docker run --platform linux/amd64 -v "$PWD/br-obex-1:/opt/server/acesquared" \
+-v "$PWD/files:/opt/steamcmd" \
+--user $(id -u):$(id -g) \
+-e HOME=/home/steam \
+--name=br-obex-1 \
+--restart unless-stopped \
+--memory=2.5g \
+-d \
+-p 60010-60012:60010-60012/udp \
+acesquaredserver
+```
+
+## Command Explanation
+
+- `docker run`: Creates and starts a new container from the specified image
+- `-v "$PWD/br-obex-1:/opt/server/acesquared"`: Mounts the local directory "br-obex-1" (in current directory) to "/opt/server/acesquared" inside the container, where the game server files are stored. **br-obex-1 is the name of your server instance** - you can change this to any name you want for your server
+- `-v "$PWD/files:/opt/steamcmd"`: Mounts a local "files" directory to persist SteamCMD data between runs
+- `--user $(id -u):$(id -g)`: Runs the container as the current user instead of root, preventing file permission issues
+- `-e HOME=/home/steam`: Sets the HOME environment variable inside the container
+- `--name=br-obex-1`: Names the container "br-obex-1", making it easier to manage. **This should match the server name in the first volume mount**
+- `--restart unless-stopped`: Automatically restarts the container if it crashes or the system reboots, but not if manually stopped
+- `--memory=2.5g`: Limits the container's memory usage to 2.5GB
+- `-d`: Runs the container in detached mode (in the background)
+- `-p 60010-60012:60010-60012/udp`: Maps UDP ports 60010-60012 from the host to the container - these are the game server ports
+- `acesquaredserver`: The name of the Docker image to use
+
 Please note that you MUST forward the UDP ports used using the ```-p``` argument!<br>
 These ports MUST be equal to the ports specified in the server config (config.toml)!
 
-
 ## Notes
-- If you get weird error like "/usr/local/bin/start-server.sh: no such file or directory",
-make sure to convert the script to have unix line endings.
+- The Ace Squared server is a Unity x86_64 application, so it runs in an emulated x86_64 environment inside the container using Docker's QEMU emulation on ARM64 systems.
+- Make sure Docker Desktop (on Mac) or Docker Engine (on Linux) has QEMU emulation enabled for multi-architecture support.
+- If you get an error like "/usr/local/bin/start-server.sh: no such file or directory", make sure the script has Unix line endings.
