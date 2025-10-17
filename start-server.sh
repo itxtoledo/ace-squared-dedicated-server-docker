@@ -1,44 +1,45 @@
 #!/bin/bash
 set -euo pipefail
 
+# Verify that the mounted volume is writable
+if [ ! -w "/opt/steamcmd" ]; then
+    echo "Error: The directory /opt/steamcmd (your local 'files' directory) is not writable by the container." >&2
+    echo "Please ensure the 'files' directory exists and you have write permissions." >&2
+    echo "On Linux/macOS, you can fix this by running: mkdir -p files && sudo chown $(id -u):$(id -g) files" >&2
+    exit 1
+fi
+
 echo "Running with UID: $(id -u), GID: $(id -g)"
 
 export HOME="${HOME:-/home/steam}"
 mkdir -p "$HOME/.steam/sdk64"
 
-# STEAMCMD_BUILT_IN is where SteamCMD was installed during Docker image build
-STEAMCMD_BUILT_IN="/opt/steamcmd-installed"
 STEAMCMD_MOUNTED="/opt/steamcmd"
+STEAMCMD_EXECUTABLE="$STEAMCMD_MOUNTED/steamcmd.sh"
 
-STEAMCMD_EXECUTABLE=""
-
-# Check if steamcmd exists in the mounted volume (user's files directory)
-if [ -f "$STEAMCMD_MOUNTED/steamcmd.sh" ]; then
-    # If volume is mounted with existing SteamCMD files, use those
-    echo ">>> SteamCMD found in mounted volume, using that version"
-    STEAMCMD_EXECUTABLE="$STEAMCMD_MOUNTED/steamcmd.sh"
-else
-    # If volume is empty (no SteamCMD files), use the built-in one from image build
-    if [ -f "$STEAMCMD_BUILT_IN/steamcmd.sh" ]; then
-        echo ">>> SteamCMD not found in mounted volume, using built-in version from image"
-        # Use the built-in SteamCMD for this run
-        STEAMCMD_EXECUTABLE="$STEAMCMD_BUILT_IN/steamcmd.sh"
-        
-        # Try to copy the built-in SteamCMD to the mounted volume for persistence
-        # Check if destination directory is empty
-        if [ -z "$(ls -A $STEAMCMD_MOUNTED)" ]; then
-            echo ">>> Mounted volume is empty, copying SteamCMD files for persistence"
-            # Copy all files from built-in location to mounted location with proper permissions
-            cp -r $STEAMCMD_BUILT_IN/* $STEAMCMD_MOUNTED/ 2>/dev/null || true
-            # Set permissions on copied files - make sure to set permissions properly
-            find $STEAMCMD_MOUNTED -type f -name "steamcmd*" -exec chmod +x {} \; 2>/dev/null || true
-        else
-            echo ">>> Mounted volume has content but no SteamCMD, using built-in version"
-        fi
-    else
-        echo ">>> No SteamCMD found in built-in location. This should not happen. Exiting..."
-        exit 1
+# Check if steamcmd.sh exists in the mounted volume. If not, download it.
+if [ ! -f "$STEAMCMD_EXECUTABLE" ]; then
+    echo ">>> SteamCMD not found in mounted volume. Downloading..."
+    
+    # Create the directory if it doesn't exist
+    mkdir -p "$STEAMCMD_MOUNTED"
+    
+    # Download, extract, and set permissions for SteamCMD
+    wget -q https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz -P "$STEAMCMD_MOUNTED"
+    tar -xzf "$STEAMCMD_MOUNTED/steamcmd_linux.tar.gz" -C "$STEAMCMD_MOUNTED"
+    rm "$STEAMCMD_MOUNTED/steamcmd_linux.tar.gz"
+    
+    echo ">>> Granting execute permissions to SteamCMD..."
+    chmod +x "$STEAMCMD_EXECUTABLE"
+    
+    # Also grant execute permission for the 32-bit compatibility layer if it exists
+    if [ -f "$STEAMCMD_MOUNTED/linux32/steamcmd" ]; then
+        chmod +x "$STEAMCMD_MOUNTED/linux32/steamcmd"
     fi
+    
+    echo ">>> SteamCMD downloaded and installed successfully."
+else
+    echo ">>> SteamCMD found in mounted volume, using that version."
 fi
 
 echo ">>> Executing steamcmd commands"
