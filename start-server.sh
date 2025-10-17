@@ -6,38 +6,29 @@ echo "Running with UID: $(id -u), GID: $(id -g)"
 export HOME="${HOME:-/home/steam}"
 mkdir -p "$HOME/.steam/sdk64"
 
-# STEAMCMD_BASE is the internal location of SteamCMD in the Docker image
-STEAMCMD_BASE="/opt/steamcmd"
+# STEAMCMD_BUILT_IN is where SteamCMD was installed during Docker image build
+STEAMCMD_BUILT_IN="/opt/steamcmd-installed"
+STEAMCMD_MOUNTED="/opt/steamcmd"
 
-# When the volume is mounted, it may override the built-in SteamCMD
-# So we check for a backup method first
 STEAMCMD_EXECUTABLE=""
 
-# Check if steamcmd exists in the mounted volume
-if [ -f "/opt/steamcmd/steamcmd.sh" ]; then
+# Check if steamcmd exists in the mounted volume (user's files directory)
+if [ -f "$STEAMCMD_MOUNTED/steamcmd.sh" ]; then
     # If volume is mounted with existing SteamCMD files, use those
     echo ">>> SteamCMD found in mounted volume, using that version"
-    STEAMCMD_EXECUTABLE="/opt/steamcmd/steamcmd.sh"
+    STEAMCMD_EXECUTABLE="$STEAMCMD_MOUNTED/steamcmd.sh"
 else
-    # If volume is empty (no SteamCMD files), try to find the built-in one in the image
-    # Since the volume mount overrides the image contents, we need to ensure SteamCMD exists
-    # If it doesn't exist in the mounted volume, we need to copy it from a backup location
-    # The Dockerfile should have installed SteamCMD at /opt/steamcmd during build
-    # But if the volume is mounted empty, we have to make sure it exists
-    if [ -f "$STEAMCMD_BASE/steamcmd.sh" ]; then
-        echo ">>> SteamCMD not found in mounted volume, but found in internal location"
-        # Copy to mounted volume to ensure persistence
-        cp -f $STEAMCMD_BASE/steamcmd.sh /opt/steamcmd/ 2>/dev/null || true
-        cp -f $STEAMCMD_BASE/linux32/* /opt/steamcmd/linux32/ 2>/dev/null || true
-        STEAMCMD_EXECUTABLE="/opt/steamcmd/steamcmd.sh"
+    # If volume is empty (no SteamCMD files), use the built-in one from image build
+    if [ -f "$STEAMCMD_BUILT_IN/steamcmd.sh" ]; then
+        echo ">>> SteamCMD not found in mounted volume, using built-in version from image"
+        # Copy the built-in SteamCMD to the mounted volume for persistence
+        cp -r $STEAMCMD_BUILT_IN/* $STEAMCMD_MOUNTED/ 2>/dev/null || true
+        # Wait a moment for the copy to complete
+        sleep 1
+        STEAMCMD_EXECUTABLE="$STEAMCMD_MOUNTED/steamcmd.sh"
     else
-        echo ">>> No SteamCMD found in image or mounted volume. Attempting to download..."
-        cd /opt/steamcmd
-        wget -q https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz
-        tar -xzf steamcmd_linux.tar.gz
-        rm steamcmd_linux.tar.gz
-        chmod +x steamcmd.sh
-        STEAMCMD_EXECUTABLE="/opt/steamcmd/steamcmd.sh"
+        echo ">>> No SteamCMD found in built-in location. This should not happen. Exiting..."
+        exit 1
     fi
 fi
 
