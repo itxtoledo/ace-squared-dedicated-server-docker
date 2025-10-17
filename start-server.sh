@@ -1,14 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-# Get user information gracefully, handling cases where the user doesn't exist in container
-USER_ID=$(id -u)
-GROUP_ID=$(id -g)
-USER_NAME=$(getent passwd $USER_ID 2>/dev/null | cut -d: -f1)
-if [ -z "$USER_NAME" ]; then
-    USER_NAME="UID_$USER_ID"
-fi
-echo "My identity: (UID: $USER_ID, GID: $GROUP_ID, USER: $USER_NAME)"
+echo "Running with UID: $(id -u), GID: $(id -g)"
 
 export HOME="${HOME:-/home/steam}"
 mkdir -p "$HOME/.steam/sdk64"
