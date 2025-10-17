@@ -21,6 +21,8 @@ echo "Running with UID: $(id -u), GID: $(id -g)"
 
 export HOME="${HOME:-/home/steam}"
 mkdir -p "$HOME/.steam/sdk64"
+echo ">>> Listing contents of $HOME/.steam after mkdir:"
+ls -laR "$HOME/.steam"
 
 STEAMCMD_MOUNTED="/opt/steamcmd"
 STEAMCMD_EXECUTABLE="$STEAMCMD_MOUNTED/steamcmd.sh"
@@ -54,6 +56,8 @@ echo ">>> Executing steamcmd commands"
 echo ">>> SteamCMD command: bash $STEAMCMD_EXECUTABLE +force_install_dir /opt/server/acesquared +login anonymous +app_update 3252540 validate +quit"
 if timeout 300 bash $STEAMCMD_EXECUTABLE +force_install_dir /opt/server/acesquared +login anonymous +app_update 3252540 validate +quit; then
     echo ">>> SteamCMD update completed successfully"
+    echo ">>> Listing contents of /opt/server/acesquared after SteamCMD update:"
+    ls -laR /opt/server/acesquared
 else
     echo ">>> SteamCMD execution failed or timed out. This could be due to network issues or other problems."
     echo ">>> Skipping SteamCMD update and attempting to start server directly if files already exist..."
@@ -87,6 +91,8 @@ PLUGIN_DST="$STEAM_SDK_DIR/steamclient.so"
 if [ -f "$PLUGIN_SRC" ] && [ -d "$STEAM_SDK_DIR" ]; then
     echo ">>> Copying plugin from $PLUGIN_SRC to $PLUGIN_DST"
     cp -f "$PLUGIN_SRC" "$PLUGIN_DST"
+    echo ">>> Listing contents of $STEAM_SDK_DIR after copying steamclient.so:"
+    ls -laR "$STEAM_SDK_DIR"
 else
     echo ">>> Warning: Could not copy steamclient.so. Source: $PLUGIN_SRC, Destination dir: $STEAM_SDK_DIR"
     if [ ! -f "$PLUGIN_SRC" ]; then
