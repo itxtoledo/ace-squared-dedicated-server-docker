@@ -9,6 +9,14 @@ if [ ! -w "/opt/steamcmd" ]; then
     exit 1
 fi
 
+# Verify that the game server mounted volume is writable
+if [ ! -w "/opt/server/acesquared" ]; then
+    echo "Error: The directory /opt/server/acesquared (your local 'br-obex-1' directory) is not writable by the container." >&2
+    echo "Please ensure the 'br-obex-1' directory exists and you have write permissions." >&2
+    echo "On Linux/macOS, you can fix this by running: mkdir -p br-obex-1 && sudo chown $(id -u):$(id -g) br-obex-1" >&2
+    exit 1
+fi
+
 echo "Running with UID: $(id -u), GID: $(id -g)"
 
 export HOME="${HOME:-/home/steam}"
