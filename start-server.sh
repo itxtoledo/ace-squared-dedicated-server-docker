@@ -57,7 +57,14 @@ if timeout 300 bash $STEAMCMD_EXECUTABLE +force_install_dir /opt/server/acesquar
 else
     echo ">>> SteamCMD execution failed or timed out. This could be due to network issues or other problems."
     echo ">>> Error: Could not update the game server."
-    exit 1
+    # Verificar se os arquivos do servidor existem mesmo após falha na atualização
+    if [ -f "/opt/server/acesquared/AceSquaredDedicated.x86_64" ]; then
+        echo ">>> Game server files detected, proceeding to start server with existing files..."
+    else
+        echo ">>> Error: Game server files not found at /opt/server/acesquared/AceSquaredDedicated.x86_64"
+        echo ">>> Please ensure the game is properly downloaded first."
+        exit 1
+    fi
 fi
 
 # Check if the game server binary exists before proceeding
