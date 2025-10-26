@@ -50,20 +50,14 @@ else
     echo ">>> SteamCMD found in mounted volume, using that version."
 fi
 
-echo ">>> Executing steamcmd commands"
+echo ">>> Executing steamcmd commands to update the server"
 echo ">>> SteamCMD command: bash $STEAMCMD_EXECUTABLE +force_install_dir /opt/server/acesquared +login anonymous +app_update 3252540 validate +quit"
 if timeout 300 bash $STEAMCMD_EXECUTABLE +force_install_dir /opt/server/acesquared +login anonymous +app_update 3252540 validate +quit; then
     echo ">>> SteamCMD update completed successfully"
 else
     echo ">>> SteamCMD execution failed or timed out. This could be due to network issues or other problems."
-    echo ">>> Skipping SteamCMD update and attempting to start server directly if files already exist..."
-    if [ -f "/opt/server/acesquared/AceSquaredDedicated.x86_64" ]; then
-        echo ">>> Game server files detected, proceeding to start server..."
-    else
-        echo ">>> Error: Game server files not found at /opt/server/acesquared/AceSquaredDedicated.x86_64"
-        echo ">>> Please ensure the game is properly downloaded first."
-        exit 1
-    fi
+    echo ">>> Error: Could not update the game server."
+    exit 1
 fi
 
 # Check if the game server binary exists before proceeding
