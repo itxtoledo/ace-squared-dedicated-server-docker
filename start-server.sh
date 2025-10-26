@@ -21,8 +21,6 @@ STEAMCMD_EXECUTABLE="$STEAMCMD_MOUNTED/steamcmd.sh"
 
 # Check if steamcmd.sh exists in the mounted volume. If not, download it.
 if [ ! -f "$STEAMCMD_EXECUTABLE" ]; then
-    echo ">>> Downloading SteamCMD..."
-    
     # Create the directory if it doesn't exist
     mkdir -p "$STEAMCMD_MOUNTED"
     
@@ -40,21 +38,13 @@ if [ ! -f "$STEAMCMD_EXECUTABLE" ]; then
 fi
 
 if timeout 300 bash $STEAMCMD_EXECUTABLE +force_install_dir /opt/server/acesquared +login anonymous +app_update 3252540 validate +quit; then
-    echo ">>> Server updated successfully"
+    :
 else
-    echo ">>> Server update failed"
     # Verificar se os arquivos do servidor existem mesmo após falha na atualização
-    if [ -f "/opt/server/acesquared/AceSquaredDedicated.x86_64" ]; then
-        echo ">>> Starting server with existing files"
-    else
-        echo ">>> Server files not found, update required"
+    if [ ! -f "/opt/server/acesquared/AceSquaredDedicated.x86_64" ]; then
+        echo "Server files not found, update required"
         exit 1
     fi
-fi
-
-# Optional: useful for troubleshooting
-if [ -f "/opt/server/acesquared/AceSquaredDedicated.x86_64" ]; then
-    ldd /opt/server/acesquared/AceSquaredDedicated.x86_64 || true
 fi
 
 # Copy steamclient.so for Unity to find via the Steam SDK path
@@ -68,8 +58,6 @@ if [ -n "$FOUND_PLUGIN_SRC" ]; then # Check if FOUND_PLUGIN_SRC is not empty
     if [ -d "$STEAM_SDK_DIR" ]; then
         cp -f "$FOUND_PLUGIN_SRC" "$PLUGIN_DST"
     fi
-else
-    echo ">>> Warning: steamclient.so not found"
 fi
 
 exec "/opt/server/acesquared/AceSquaredDedicated.x86_64"
